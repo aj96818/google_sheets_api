@@ -1,3 +1,7 @@
+
+google_sheets_keys.json
+google_sheets_python_env
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

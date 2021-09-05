@@ -44,14 +44,14 @@ service = build('sheets', 'v4', credentials=creds)
 
 sheet = service.spreadsheets()
 result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                            range="Sheet1!A1:F20").execute()
+                            range="Sheet1!A1:F36").execute()
 values = result.get('values', [])
 
 # print(values)
 
 
 df_crypto_balances = pd.DataFrame(values)
-df_crypto_balances.columns = ['Name', 'symbol', 'Amount', 'Amount in BTC', 'Avg Price', 'Last Updated']
+df_crypto_balances.columns = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Total Cost', 'Location']
 
 #print(df_crypto_balances)
 
@@ -90,29 +90,43 @@ try:
 
   df_short = df[['symbol', 'slug', 'date_added', 'last_updated', 'quote.USD.price', 'quote.USD.volume_24h', 'quote.USD.market_cap', 'quote.USD.percent_change_24h', 'quote.USD.percent_change_7d', 'quote.USD.percent_change_30d', 'quote.USD.percent_change_60d', 'quote.USD.percent_change_90d']]
   
-  crypto_tickers = ['CVC', 'LSK', 'OMG', 'BTC', 'ETH', 'NEO', 'ADA', 'OCEAN', 'DOT', 'TRAC', 'MRPH', 'BAL', 'ZRX'
-                    'COMP', 'MKR', 'SNX', 'BNB', 'LINK', 'UNI', 'XMR', 'ALGO', 'UMA', 'REN', 'BAT', 'ONT'
-                    , 'KNC', 'UBT', 'OMI', 'EWT', 'SOL', 'WPR', 'XLM', 'ATOM', 'XRP', 'EOS', 'MANA', 'STORJ', 'SC'
-                    , 'VTX', 'DWZ', 'CAKE', 'PNT', 'CHART', 'BLANK', 'TRB', 'DVG', 'ALPA', 'PHA', 'KSM', 'BLES'
-                    , 'GRC', 'SWAP', '1INCH', 'LRC', 'DVG', 'POLS', 'ROOK', 'MPH', 'TRB', 'BNT', 'GRT', 'VRA', 'ERN'
-                    , 'BEPRO', 'MATIC', 'BCH', 'LUNA', 'SOL', 'KSM', 'RUNE']
+  crypto_tickers = ['ZRX', '1INCH', 'AAVE', 'AMP', 'BAL', 'BAT', 'BNB', 'BTC', 'BCH', 'ADA',
+					'LINK', 'CVC', 'ATOM', 'MANA', 'ETH', 'ICP', 'MIOTA', 'KLAY', 'KSM', 'KNC',
+					'LUNA', 'XMR', 'ONT', 'OGN', 'CAKE', 'DOT', 'MATIC', 'REN', 'XRP', 'SOL',
+					'XLM', 'GRT', 'THETA', 'RUNE', 'UNI']
 
   #df_short.crypto_tickers.isin(crypto_tickers)
   df_out = df_short[df_short['symbol'].isin(crypto_tickers)]
 #  df_out.to_csv(r'coinmarketcap_api_v2.csv')
-  df_out.columns = ['symbol', 'name', 'date_added', 'last_updated', 'price_usd', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
+  df_out.columns = ['Symbol', 'name', 'date_added', 'last_updated', 'price_usd', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
   #print(df_out)
 
 except (ConnectionError, Timeout, TooManyRedirects) as e:
   print('except error: check code')
 
 
-df_merged = pd.merge(df_crypto_balances, df_out, on = 'symbol', how = 'left')
-
+df_merged = pd.merge(df_crypto_balances, df_out, on = 'Symbol', how = 'left')
 
 #print(df_merged)
 
-df_merged.to_csv(r'crypto_balances_api_test.csv')
+# exclude first row
 
+df_merged = df_merged.iloc[1: , :]
 
+# exclude the following 'names' from coinmktcap df: "luna-coin", "rune", "thorchain-erc20", "unicorn-token"
 
+names_to_exclude = ["luna-coin", "golden-ratio-token", "rune", "thorchain-erc20", "unicorn-token"]
+df_merged = df_merged[~df_merged.name.isin(names_to_exclude)]
+
+df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance"]] = df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance"]].apply(pd.to_numeric)
+
+df_merged["Avg_Pct_Return"] = ((df_merged["price_usd"] - df_merged["Avg Price"]) / df_merged["Avg Price"]) * 100
+df_merged["Total Return"] = ((df_merged["price_usd"] * df_merged["Balance"]) - df_merged["Avg Total Cost"])
+
+df_merged = df_merged.round(2)
+df_merged = df_merged.sort_values(by=['Avg Total Cost'], ascending = False)
+
+cols = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Total Cost', 'Total Return', 'Avg_Pct_Return', 'price_usd', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
+df_merged = df_merged[cols]
+
+df_merged.to_csv(r'crypto_balances_api_test_v10.csv')

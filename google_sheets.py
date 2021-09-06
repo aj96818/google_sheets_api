@@ -1,3 +1,7 @@
+
+# cd google_sheets_api
+# source google_sheets_python_env/bin/activate
+
 # Google Sheets API packages
 
 from __future__ import print_function
@@ -44,7 +48,7 @@ service = build('sheets', 'v4', credentials=creds)
 
 sheet = service.spreadsheets()
 result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                            range="Sheet1!A1:F36").execute()
+                            range="Sheet1!A1:F43").execute()
 values = result.get('values', [])
 
 # print(values)
@@ -122,14 +126,17 @@ df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance"]] = df_merged[[
 
 df_merged["Avg_Pct_Return"] = ((df_merged["price_usd"] - df_merged["Avg Price"]) / df_merged["Avg Price"]) * 100
 df_merged["Total Return"] = ((df_merged["price_usd"] * df_merged["Balance"]) - df_merged["Avg Total Cost"])
+df_merged["Total Equity"] = df_merged["price_usd"] * df_merged["Balance"]
 
-df_merged = df_merged.round(2)
-df_merged = df_merged.sort_values(by=['Avg Total Cost'], ascending = False)
 
-cols = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Total Cost', 'Total Return', 'Avg_Pct_Return', 'price_usd', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
+df_merged = df_merged.round(3)
+df_merged = df_merged.sort_values(by=['Total Equity'], ascending = False)
+
+cols = ['Name', 'Symbol', 'Avg Price', 'price_usd', 'Balance','Avg Total Cost','Total Return', 'Total Equity', 'Avg_Pct_Return', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
 df_merged = df_merged[cols]
+# df_merged = df_merged.fillna('')
 
-# df_merged.to_csv(r'crypto_balances_api_test_v10.csv')
+#df_merged.to_csv(r'crypto_balances_api_test_v13.csv')
 
 
 # writing 'df_merged' to new Google Sheet using 'gspread' python package (pip install gspread & gspread_dataframe)
@@ -137,19 +144,16 @@ df_merged = df_merged[cols]
 import gspread
 from gspread_dataframe import set_with_dataframe
 
-# ACCESS GOOGLE SHEET
+# ACCESS GOOGLE SHEET2
 gc = gspread.service_account(filename='google_sheets_keys.json')
 sh = gc.open_by_key('1zkf3DJ9Yaod5u6WtnGcfiJmkbY5usnU5nqz4sWXZsD8')
 worksheet = sh.get_worksheet(1) #-> 0 - first sheet, 1 - second sheet etc. 
 
-# CLEAR SHEET CONTENT
+# CLEAR SHEET2 CONTENTS
 range_of_cells = worksheet.range('A1:V1000') 
 for cell in range_of_cells:
 	cell.value = ''
 worksheet.update_cells(range_of_cells) 
 
-# APPEND DATA TO SHEET
-# your_dataframe = pd.DataFrame()
+# APPEND DATA TO SHEET2
 set_with_dataframe(worksheet, df_merged)
-
-

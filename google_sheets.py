@@ -48,14 +48,14 @@ service = build('sheets', 'v4', credentials=creds)
 
 sheet = service.spreadsheets()
 result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                            range="Sheet1!A1:F43").execute()
+                            range="Sheet1!A1:G43").execute()
 values = result.get('values', [])
 
 # print(values)
 
 
 df_crypto_balances = pd.DataFrame(values)
-df_crypto_balances.columns = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Total Cost', 'Location']
+df_crypto_balances.columns = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Total Cost', 'ATH', 'Location']
 
 #print(df_crypto_balances)
 
@@ -122,17 +122,18 @@ df_merged = df_merged.iloc[1: , :]
 names_to_exclude = ["luna-coin", "golden-ratio-token", "rune", "thorchain-erc20", "unicorn-token"]
 df_merged = df_merged[~df_merged.name.isin(names_to_exclude)]
 
-df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance"]] = df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance"]].apply(pd.to_numeric)
+df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance", "ATH"]] = df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance", "ATH"]].apply(pd.to_numeric)
 
 df_merged["Avg_Pct_Return"] = ((df_merged["price_usd"] - df_merged["Avg Price"]) / df_merged["Avg Price"]) * 100
 df_merged["Total Return"] = ((df_merged["price_usd"] * df_merged["Balance"]) - df_merged["Avg Total Cost"])
 df_merged["Total Equity"] = df_merged["price_usd"] * df_merged["Balance"]
+df_merged["Pct of ATH"] = df_merged["price_usd"] / df_merged["ATH"]
 
 
 df_merged = df_merged.round(3)
-df_merged = df_merged.sort_values(by=['Total Equity'], ascending = False)
+df_merged = df_merged.sort_values(by=['Pct of ATH'], ascending = False)
 
-cols = ['Name', 'Symbol', 'Avg Price', 'price_usd', 'Balance','Avg Total Cost','Total Return', 'Total Equity', 'Avg_Pct_Return', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
+cols = ['Name', 'Symbol', 'Avg Price', 'price_usd', 'ATH', 'Pct of ATH', 'Avg_Pct_Return','Balance','Avg Total Cost','Total Return', 'Total Equity', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
 df_merged = df_merged[cols]
 # df_merged = df_merged.fillna('')
 

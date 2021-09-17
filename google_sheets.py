@@ -1,6 +1,14 @@
 
-# cd google_sheets_api
+# To instantiate Github SSH:
+# eval ssh-agent
+# ssh-add alan_mbp_ssh
+
+# cd Documents/google_sheets_api
 # source google_sheets_python_env/bin/activate
+
+# make changes to file; Save them; git add google_sheets.py from alanjackson/Documents/google_sheets_api directory;
+# git commit -m <write your commit message>
+# git push
 
 # Google Sheets API packages
 

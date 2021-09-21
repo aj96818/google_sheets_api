@@ -72,8 +72,6 @@ df_crypto_balances.columns = ['Name', 'Symbol', 'Balance', 'Avg Price', 'Avg Tot
 # 	valueInputOption = "USER_ENTERED", body = {"values":append_data}).execute()
 
 
-
-
 # CoinMarketCap API
 
 api_key = '231f04b7-44ce-4dcd-8dfd-0f0e0e1fbda4'
@@ -109,12 +107,14 @@ try:
 
   #df_short.crypto_tickers.isin(crypto_tickers)
   df_out = df_short[df_short['symbol'].isin(crypto_tickers)]
-#  df_out.to_csv(r'coinmarketcap_api_v2.csv')
+#  df_out.to_csv(r'coinmarketcap_api_v6.csv')
   df_out.columns = ['Symbol', 'name', 'date_added', 'last_updated', 'price_usd', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
-  #print(df_out)
+  
 
 except (ConnectionError, Timeout, TooManyRedirects) as e:
   print('except error: check code')
+
+# End Coinmarketcap API Call
 
 
 df_merged = pd.merge(df_crypto_balances, df_out, on = 'Symbol', how = 'left')
@@ -127,7 +127,7 @@ df_merged = df_merged.iloc[1: , :]
 
 # exclude the following 'names' from coinmktcap df: "luna-coin", "rune", "thorchain-erc20", "unicorn-token"
 
-names_to_exclude = ["luna-coin", "golden-ratio-token", "rune", "thorchain-erc20", "unicorn-token"]
+names_to_exclude = ["luna-coin", "golden-ratio-token", "rune", "thorchain-erc20", "unicorn-token", "sol-rune---rune-game"]
 df_merged = df_merged[~df_merged.name.isin(names_to_exclude)]
 
 df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance", "ATH"]] = df_merged[["price_usd", "Avg Price", "Avg Total Cost", "Balance", "ATH"]].apply(pd.to_numeric)
@@ -139,7 +139,7 @@ df_merged["Pct of ATH"] = df_merged["price_usd"] / df_merged["ATH"]
 
 
 df_merged = df_merged.round(3)
-df_merged = df_merged.sort_values(by=['Pct of ATH'], ascending = False)
+df_merged = df_merged.sort_values(by=['Avg_Pct_Return'], ascending = False)
 
 cols = ['Name', 'Symbol', 'Avg Price', 'price_usd', 'ATH', 'Pct of ATH', 'Avg_Pct_Return','Balance','Avg Total Cost','Total Return', 'Total Equity', 'last_updated', 'volume_24h', 'market_cap', 'percent_change_24h', 'percent_change_7d', 'percent_change_30d', 'percent_change_60d', 'percent_change_90d']
 df_merged = df_merged[cols]
@@ -167,4 +167,3 @@ worksheet.update_cells(range_of_cells)
 # APPEND DATA TO SHEET2
 set_with_dataframe(worksheet, df_merged)
 
-# let's see if this line appears in my SSH commit!
